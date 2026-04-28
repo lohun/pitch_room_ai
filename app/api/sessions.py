@@ -57,10 +57,16 @@ async def get_session(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     
     evaluation = await db.evaluations.find_one({"session_id": session_id})
-    transcripts = await db.transcripts.find({"session_id": session_id}).to_list(1000)
+    transcripts = await db.transcripts.find({"session_id": session_id}).sort("timestamp", 1).to_list(1000)
     
+    # Helper to clean MongoDB documents for serialization
+    def clean_doc(doc):
+        if not doc: return None
+        doc["id"] = str(doc.pop("_id"))
+        return doc
+
     return {
-        "session": session,
-        "evaluation": evaluation,
-        "transcripts": transcripts
+        "session": clean_doc(session),
+        "evaluation": clean_doc(evaluation),
+        "transcripts": [clean_doc(t) for t in transcripts]
     }

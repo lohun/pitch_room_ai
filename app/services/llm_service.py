@@ -9,8 +9,7 @@ load_dotenv()
 
 class LLMService:
     def __init__(self):
-
-        self.model = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
     async def generate_response(self, transcript_history: List[Dict], mode: str) -> Dict:
         """
@@ -55,7 +54,7 @@ class LLMService:
         
         prompt = f"Conversation History:\n{history_text}\n\nPIA Response:"
         
-        response = await self.model.generate_content_async(
+        response = await self.client.aio.models.generate_content(
             model="gemini-3-flash-preview",
             config=types.GenerateContentConfig(
                 system_instruction=system_prompt),

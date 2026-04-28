@@ -8,7 +8,6 @@ torchaudio
 numpy
 faster-whisper
 transformers
-datasets
 sentencepiece
 pydantic
 python-dotenv

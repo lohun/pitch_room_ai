@@ -1,9 +1,9 @@
 import torch
 from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
-from datasets import load_dataset
 import numpy as np
 import io
 import soundfile as sf
+import os
 
 class TTSService:
     def __init__(self):
@@ -11,10 +11,13 @@ class TTSService:
         self.model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
         self.vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
         
-        # Load speaker embeddings (xvectors)
-        self.embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
-        # We'll use a specific speaker for PIA
-        self.speaker_embeddings = torch.tensor(self.embeddings_dataset[7306]["xvector"]).unsqueeze(0)
+        # Load speaker embeddings (xvectors) from local file
+        embedding_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "speaker_embeddings.pt")
+        if os.path.exists(embedding_path):
+            self.speaker_embeddings = torch.load(embedding_path, weights_only=True)
+        else:
+            # Fallback or error if the file is missing
+            raise FileNotFoundError(f"Speaker embeddings not found at {embedding_path}. Please ensure the file exists.")
 
     def generate_speech(self, text: str) -> bytes:
         """

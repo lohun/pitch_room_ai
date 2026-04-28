@@ -103,6 +103,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                         
                         # 3. TTS (SpeechT5)
                         audio_response = tts_service.generate_speech(pia_response)
+                        print(audio_response)
                         
                         # 4. Stream back audio
                         await websocket.send_bytes(audio_response)
