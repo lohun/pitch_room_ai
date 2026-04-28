@@ -14,6 +14,7 @@ function App() {
 
   const {
     isRecording,
+    isPiaSpeaking,
     transcripts,
     evaluation,
     status,
@@ -131,11 +132,13 @@ function App() {
             <div className="call-layout">
               <div className="main-feed">
                 <div className="pia-status">
-                  <div className={`pia-avatar ${isRecording ? 'pulse' : ''}`}>
+                  <div className={`pia-avatar ${isPiaSpeaking ? 'pulse' : ''}`}>
                     <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Pia" alt="Pia" />
                   </div>
-                  <h3>Pia is {status === 'active' ? 'Listening' : 'Connecting...'}</h3>
-                  <Waveform isActive={isRecording} />
+                  <h3>
+                    {isPiaSpeaking ? 'Pia is Speaking' : (status === 'active' ? 'Pia is Listening' : 'Connecting...')}
+                  </h3>
+                  <Waveform isActive={isRecording || isPiaSpeaking} />
                 </div>
 
                 <div className="transcript-container">

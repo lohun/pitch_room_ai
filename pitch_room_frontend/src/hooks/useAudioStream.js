@@ -4,6 +4,7 @@ const SAMPLE_RATE = 16000;
 
 export const useAudioStream = (sessionId) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isPiaSpeaking, setIsPiaSpeaking] = useState(false);
   const [transcripts, setTranscripts] = useState([]);
   const [evaluation, setEvaluation] = useState(null);
   const [status, setStatus] = useState('idle'); // idle, connecting, active, error
@@ -16,8 +17,12 @@ export const useAudioStream = (sessionId) => {
   const isPlayingRef = useRef(false);
 
   const playNextInQueue = useCallback(async () => {
-    if (audioQueueRef.current.length === 0 || isPlayingRef.current) return;
+    if (audioQueueRef.current.length === 0 || isPlayingRef.current) {
+      if (audioQueueRef.current.length === 0) setIsPiaSpeaking(false);
+      return;
+    }
     
+    setIsPiaSpeaking(true);
     isPlayingRef.current = true;
     const audioData = audioQueueRef.current.shift();
     
@@ -48,10 +53,10 @@ export const useAudioStream = (sessionId) => {
       const wsUrl = `${protocol}//localhost:8000/ws/audio/${sessionId}`;
       socketRef.current = new WebSocket(wsUrl);
       
-      socketRef.current.onopen = () => {
+      socketRef.current.onopen = async () => {
         console.log("WebSocket connected");
         setStatus('active');
-        setupAudio();
+        await setupAudio();
       };
 
       socketRef.current.onmessage = async (event) => {
@@ -95,6 +100,11 @@ export const useAudioStream = (sessionId) => {
         sampleRate: SAMPLE_RATE,
       });
 
+      // Resume context (important for browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+
       const source = audioContextRef.current.createMediaStreamSource(streamRef.current);
       
       // Use ScriptProcessorNode for simplicity in this demo (deprecated but widely supported for small tasks)
@@ -105,9 +115,9 @@ export const useAudioStream = (sessionId) => {
       processorRef.current.connect(audioContextRef.current.destination);
 
       processorRef.current.onaudioprocess = (e) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
+        // Echo suppression: don't send mic data while Pia is speaking
+        if (socketRef.current?.readyState === WebSocket.OPEN && !isPlayingRef.current) {
           const inputData = e.inputBuffer.getChannelData(0);
-          // Send as Float32 binary
           socketRef.current.send(inputData.buffer);
         }
       };
@@ -130,6 +140,7 @@ export const useAudioStream = (sessionId) => {
       audioContextRef.current.close();
     }
     setIsRecording(false);
+    setIsPiaSpeaking(false);
   };
 
   const endStream = useCallback(() => {
@@ -137,6 +148,8 @@ export const useAudioStream = (sessionId) => {
       socketRef.current.close();
     }
     stopAudio();
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -147,6 +160,7 @@ export const useAudioStream = (sessionId) => {
 
   return {
     isRecording,
+    isPiaSpeaking,
     transcripts,
     evaluation,
     status,
