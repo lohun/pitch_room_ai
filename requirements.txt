@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+websockets
+motor
+google-generativeai
+torch
+torchaudio
+numpy
+faster-whisper
+transformers
+datasets
+sentencepiece
+pydantic
+python-dotenv
+python-multipart
+soundfile
