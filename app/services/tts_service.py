@@ -1,47 +1,40 @@
-import torch
-from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
-import numpy as np
-import io
-import soundfile as sf
+from elevenlabs.client import ElevenLabs
 import os
+import io
 
 class TTSService:
     def __init__(self):
-        self.processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
-        self.model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
-        self.vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
+        self.api_key = os.getenv("ELEVENLABS_API_KEY")
+        if not self.api_key:
+            print("WARNING: ELEVENLABS_API_KEY not found in environment variables.")
         
-        # Load speaker embeddings (xvectors) from local file
-        embedding_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "speaker_embeddings.pt")
-        if os.path.exists(embedding_path):
-            self.speaker_embeddings = torch.load(embedding_path, weights_only=True)
-        else:
-            # Fallback or error if the file is missing
-            raise FileNotFoundError(f"Speaker embeddings not found at {embedding_path}. Please ensure the file exists.")
+        self.client = ElevenLabs(api_key=self.api_key)
+        self.voice_id = "JBFqnCBsd6RMkjVDRZzb"
+        self.model_id = "eleven_multilingual_v2"
 
     def generate_speech(self, text: str) -> bytes:
         """
-        Generates speech audio from text.
-        Returns wav bytes.
+        Generates speech audio from text using ElevenLabs.
+        Returns audio bytes (MP3 format).
         """
-        inputs = self.processor(text=text, return_tensors="pt")
-        
-        speech = self.model.generate_speech(
-            inputs["input_ids"], 
-            self.speaker_embeddings, 
-            vocoder=self.vocoder
+        if not self.api_key:
+            return b""
+
+        # Call ElevenLabs API
+        audio_generator = self.client.text_to_speech.convert(
+            text=text,
+            voice_id=self.voice_id,
+            model_id=self.model_id,
+            output_format="mp3_44100_128",
         )
         
-        # Convert to numpy and then to bytes
-        audio_data = speech.numpy()
-        
-        out_buf = io.BytesIO()
-        sf.write(out_buf, audio_data, 16000, format='WAV')
-        return out_buf.getvalue()
+        # Collect all bytes from the generator
+        audio_bytes = b"".join(audio_generator)
+        return audio_bytes
 
     async def stream_speech(self, text: str):
         """
-        Placeholder for real-time streaming if the model supports it.
-        For SpeechT5, we usually generate full sentences and stream the buffers.
+        Wrapper for streaming speech. 
+        For now, returns the full audio as bytes.
         """
         return self.generate_speech(text)

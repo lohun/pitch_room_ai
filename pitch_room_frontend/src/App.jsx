@@ -71,7 +71,7 @@ function App() {
 
       <AnimatePresence mode="wait">
         {view === 'landing' && (
-          <motion.div 
+          <motion.div
             key="landing"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,23 +83,23 @@ function App() {
                 <Rocket size={32} color="var(--primary-color)" />
                 <h1>PIA</h1>
               </div>
-              <p className="subtitle">Pitch Intelligence Agent</p>
+              <p className="subtitle">Pitch Room Intelligence Agent</p>
               <h2>The adversarial VC agent that <span className="highlight">perfects</span> your pitch.</h2>
             </header>
 
             <div className="input-card glass">
               <label>Your Business Idea</label>
-              <textarea 
+              <textarea
                 placeholder="Briefly explain what you're building..."
                 value={pitchData.idea}
                 onChange={(e) => setPitchData({ ...pitchData, idea: e.target.value })}
               />
-              
+
               <div className="mode-selector">
                 <label>Pia's Aggression Mode</label>
                 <div className="modes">
                   {['elevator', 'vc', 'deep'].map(m => (
-                    <button 
+                    <button
                       key={m}
                       className={pitchData.mode === m ? 'active' : ''}
                       onClick={() => setPitchData({ ...pitchData, mode: m })}
@@ -110,7 +110,7 @@ function App() {
                 </div>
               </div>
 
-              <button 
+              <button
                 className="start-btn"
                 disabled={!pitchData.idea}
                 onClick={handleStartSession}
@@ -122,7 +122,7 @@ function App() {
         )}
 
         {view === 'call' && (
-          <motion.div 
+          <motion.div
             key="call"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -168,7 +168,7 @@ function App() {
                   <BarChart3 size={20} />
                   <h3>Live Intelligence</h3>
                 </div>
-                
+
                 <div className="scores-list">
                   {evaluation ? (
                     Object.entries(evaluation.scores || evaluation).map(([key, value]) => (
@@ -178,7 +178,7 @@ function App() {
                           <span>{Math.round(value * 100)}%</span>
                         </div>
                         <div className="score-bar">
-                          <motion.div 
+                          <motion.div
                             className="bar-fill"
                             initial={{ width: 0 }}
                             animate={{ width: `${value * 100}%` }}
@@ -196,7 +196,7 @@ function App() {
         )}
 
         {view === 'report' && (
-          <motion.div 
+          <motion.div
             key="report"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -205,7 +205,7 @@ function App() {
             <div className="report-card glass">
               <h1>Pitch Intelligence Report</h1>
               <p>Session ID: {sessionId}</p>
-              
+
               <div className="final-verdict">
                 <h3>Final Scores</h3>
                 <div className="grid">
