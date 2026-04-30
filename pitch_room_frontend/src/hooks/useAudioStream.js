@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 
 const SAMPLE_RATE = 16000;
 
@@ -8,7 +9,7 @@ export const useAudioStream = (sessionId) => {
   const [transcripts, setTranscripts] = useState([]);
   const [evaluation, setEvaluation] = useState(null);
   const [status, setStatus] = useState('idle'); // idle, connecting, active, error
-  
+
   const socketRef = useRef(null);
   const audioContextRef = useRef(null);
   const streamRef = useRef(null);
@@ -16,43 +17,57 @@ export const useAudioStream = (sessionId) => {
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
 
-  const playNextInQueue = useCallback(async () => {
-    if (audioQueueRef.current.length === 0 || isPlayingRef.current) {
-      if (audioQueueRef.current.length === 0) setIsPiaSpeaking(false);
+  const speak = useCallback(async (text) => {
+    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+    const voiceId = import.meta.env.VITE_ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
+
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      console.warn("ElevenLabs API key not set in .env");
       return;
     }
-    
-    setIsPiaSpeaking(true);
-    isPlayingRef.current = true;
-    const audioData = audioQueueRef.current.shift();
-    
+
     try {
-      const audioBuffer = await audioContextRef.current.decodeAudioData(audioData);
-      const source = audioContextRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContextRef.current.destination);
-      source.onended = () => {
+      setIsPiaSpeaking(true);
+      isPlayingRef.current = true;
+
+      const elevenlabs = new ElevenLabsClient({ apiKey: apiKey });
+      const generatedAudio = await elevenlabs.textToSpeech.convert(
+        voiceId, // "George" - browse voices at elevenlabs.io/app/voice-library
+        {
+          text: text,
+          modelId: 'eleven_v3',
+          outputFormat: 'mp3_44100_128',
+        }
+      );
+      const audioStream = (await generatedAudio.getReader().read()).value;
+      const audioBlob = new Blob([audioStream], { type: 'audio/mpeg' })
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      audio.onended = () => {
+        setIsPiaSpeaking(false);
         isPlayingRef.current = false;
-        playNextInQueue();
+        URL.revokeObjectURL(audioUrl);
       };
-      source.start();
+
+      await audio.play();
     } catch (e) {
-      console.error("Error playing audio chunk:", e);
+      console.error("Error in ElevenLabs TTS:", e);
+      setIsPiaSpeaking(false);
       isPlayingRef.current = false;
-      playNextInQueue();
     }
   }, []);
 
   const startStream = useCallback(async () => {
     if (!sessionId) return;
-    
+
     try {
       setStatus('connecting');
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      // Adjust this URL to your backend
       const wsUrl = `${protocol}//localhost:8000/ws/audio/${sessionId}`;
       socketRef.current = new WebSocket(wsUrl);
-      
+
       socketRef.current.onopen = async () => {
         console.log("WebSocket connected");
         setStatus('active');
@@ -67,12 +82,11 @@ export const useAudioStream = (sessionId) => {
             if (data.evaluation) {
               setEvaluation(data.evaluation);
             }
+            // Trigger TTS for Pia
+            if (data.speaker === 'pia') {
+              speak(data.text);
+            }
           }
-        } else {
-          // Binary data (audio response)
-          const arrayBuffer = await event.data.arrayBuffer();
-          audioQueueRef.current.push(arrayBuffer);
-          playNextInQueue();
         }
       };
 
@@ -91,7 +105,7 @@ export const useAudioStream = (sessionId) => {
       console.error("Failed to start stream:", e);
       setStatus('error');
     }
-  }, [sessionId, playNextInQueue]);
+  }, [sessionId, speak]);
 
   const setupAudio = async () => {
     try {
@@ -106,11 +120,11 @@ export const useAudioStream = (sessionId) => {
       }
 
       const source = audioContextRef.current.createMediaStreamSource(streamRef.current);
-      
+
       // Use ScriptProcessorNode for simplicity in this demo (deprecated but widely supported for small tasks)
       // For production, use AudioWorklet
       processorRef.current = audioContextRef.current.createScriptProcessor(512, 1, 1);
-      
+
       source.connect(processorRef.current);
       processorRef.current.connect(audioContextRef.current.destination);
 
@@ -121,7 +135,7 @@ export const useAudioStream = (sessionId) => {
           socketRef.current.send(inputData.buffer);
         }
       };
-      
+
       setIsRecording(true);
     } catch (e) {
       console.error("Audio setup failed:", e);

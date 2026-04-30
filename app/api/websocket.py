@@ -2,7 +2,6 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.vad_service import VADService
 from app.services.stt_service import STTService
 from app.services.llm_service import LLMService
-from app.services.tts_service import TTSService
 from app.core.database import get_db
 from app.models.schemas import Speaker
 import numpy as np
@@ -16,7 +15,6 @@ router = APIRouter()
 vad_service = VADService()
 stt_service = STTService()
 llm_service = LLMService()
-tts_service = TTSService()
 
 @router.websocket("/ws/audio/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
@@ -32,7 +30,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     audio_buffer = []
     is_speaking = False
     silence_counter = 0
-    SILENCE_THRESHOLD_MS = 800  # Based on agents.md
+    SILENCE_THRESHOLD_MS = 1000  # Based on agents.md
     CHUNK_DURATION_MS = 20  # Assuming 20ms chunks from frontend
     MAX_SILENCE_CHUNKS = SILENCE_THRESHOLD_MS // CHUNK_DURATION_MS
 
@@ -100,12 +98,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                             )
                         
                         await websocket.send_json({"type": "transcript", "speaker": "pia", "text": pia_response, "evaluation": response_data.get("evaluation_update")})
-                        
-                        # 3. TTS (SpeechT5)
-                        audio_response = tts_service.generate_speech(pia_response)
-                        
-                        # 4. Stream back audio
-                        await websocket.send_bytes(audio_response)
                         
     except WebSocketDisconnect:
         print(f"WebSocket disconnected for session {session_id}")

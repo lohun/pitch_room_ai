@@ -10,7 +10,7 @@ PIA is a **structured, adversarial conversational AI** designed to evaluate busi
   - **VAD**: Silero VAD (Voice Activity Detection) for tight turn-taking.
   - **STT**: Faster-Whisper for high-accuracy local transcription.
   - **LLM**: Google Gemini 1.5 Flash for adversarial reasoning and structured evaluation.
-  - **TTS**: Microsoft SpeechT5 for low-latency voice synthesis.
+  - **TTS**: ElevenLabs for high-fidelity, premium voice synthesis.
 - **Database**: MongoDB for session history and evaluation tracking.
 
 ---
