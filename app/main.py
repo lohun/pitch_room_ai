@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import sessions, websocket
+from app.api import sessions, websocket, auth
 from app.core.database import connect_to_mongo, close_mongo_connection
 import uvicorn
 
@@ -16,6 +16,7 @@ app.add_middleware(
 )
 
 # Include Routers
+app.include_router(auth.router)
 app.include_router(sessions.router)
 app.include_router(websocket.router)
 
