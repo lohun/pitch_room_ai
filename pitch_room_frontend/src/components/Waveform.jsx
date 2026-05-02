@@ -16,7 +16,7 @@ const Waveform = ({ isActive }) => {
     
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#00f2ff';
+      ctx.fillStyle = '#F2994A'; // Orange primary
       
       for (let i = 0; i < bars; i++) {
         const height = Math.random() * canvas.height * 0.8 + 5;

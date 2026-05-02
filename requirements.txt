@@ -14,3 +14,10 @@ python-dotenv
 python-multipart
 soundfile
 elevenlabs
+pydantic
+pydantic_ai
+pypdf
+chromadb
+bcrypt==4.0.1
+passlib[bcrypt]
+python-jose[cryptography]

@@ -1,7 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
+from typing import List, Optional, Dict
+from pydantic import BaseModel, Field, EmailStr
 
 class SessionMode(str, Enum):
     ELEVATOR = "elevator"
@@ -46,3 +46,35 @@ class EvaluationUpdate(BaseModel):
     session_id: str
     scores: EvaluationRubric
     history: List[Dict] = []
+
+# User Models
+class UserBase(BaseModel):
+    email: EmailStr
+    name: str
+    date_of_birth: date
+
+class UserCreate(UserBase):
+    password: str
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    password: Optional[str] = None
+
+class User(UserBase):
+    id: str
+
+    class Config:
+        from_attributes = True
+
+class UserInDB(User):
+    hashed_password: str
+
+# Token Models
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
