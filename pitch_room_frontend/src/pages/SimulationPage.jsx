@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Mic, MicOff, PhoneOff, RotateCcw, AlertCircle, BarChart3 } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, RotateCcw, AlertCircle, BarChart3, Pause, Rocket } from 'lucide-react';
 import Waveform from '../components/Waveform';
 import { useAudioStream } from '../hooks/useAudioStream';
 
@@ -42,11 +42,24 @@ const SimulationPage = () => {
     navigate(`/results/${sessionId}`);
   };
 
+  const handlePause = () => {
+    endStream();
+    navigate('/setup');
+  };
+
   // Get the latest PIA question/comment
   const latestPia = [...transcripts].reverse().find(t => t.speaker === 'pia');
 
   return (
-    <div className="simulation-page container" style={{ paddingTop: '2rem', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="simulation-page container" style={{ paddingTop: '2rem', height: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'scroll' }}>
+      <header className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 0' }}>
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white', fontSize: '1.25rem', fontWeight: 'bold' }}>
+            <Rocket className="text-accent" size={28} />
+            <h2 style={{ fontSize: '1.5rem', letterSpacing: '-0.5px' }}>PitchRoom AI</h2>
+          </Link>
+        </div>
+      </header>
       <header style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <p style={{ textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '2px', fontSize: '0.8rem', fontWeight: 'bold' }}>ACTIVE SIMULATION</p>
         <h2 style={{ fontSize: '2.5rem' }}>Pitching to: Skeptical VC</h2>
@@ -60,22 +73,42 @@ const SimulationPage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* AI Avatar / Visualizer Area */}
           <div className="glass" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            <div style={{ 
-              width: '120px', 
-              height: '120px', 
-              borderRadius: '30px', 
-              background: 'white', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
+            <div style={{
+              width: '80%',
+              margin: 'auto',
+              height: '120px',
+              borderRadius: '30px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               boxShadow: isPiaSpeaking ? '0 0 40px rgba(242, 153, 74, 0.4)' : 'none',
               transition: 'all 0.3s ease',
               marginBottom: '2rem'
             }}>
-              <Mic size={48} color="black" />
+              <button
+                className="btn btn-secondary"
+                style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#F59E0B', color: 'white', border: 'none' }}
+                onClick={handlePause}
+                title="Pause & Return to Setup"
+              >
+                <Pause size={32} />
+              </button>
+              <Mic size={48} color="white" />
+              <button
+                className="btn"
+                style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#EF4444', color: 'white', border: 'none' }}
+                onClick={handleEnd}
+                title="End Call & View Results"
+              >
+                <PhoneOff size={32} />
+              </button>
             </div>
-            
+
             <Waveform isActive={isRecording || isPiaSpeaking} />
+          </div>
+
+          {/* Controls */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem' }}>
           </div>
 
           {/* Transcript Feed */}
@@ -100,14 +133,14 @@ const SimulationPage = () => {
           {/* AI Interruption Alert */}
           <AnimatePresence>
             {isPiaSpeaking && latestPia && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="glass" 
-                style={{ 
-                  border: '2px solid var(--primary)', 
-                  padding: '1.5rem', 
+                className="glass"
+                style={{
+                  border: '2px solid var(--primary)',
+                  padding: '1.5rem',
                   background: 'rgba(242, 153, 74, 0.05)',
                   display: 'flex',
                   gap: '1.5rem',
@@ -127,19 +160,6 @@ const SimulationPage = () => {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Controls */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
-            <button className="btn btn-secondary" style={{ width: '64px', height: '64px', borderRadius: '50%' }}>
-              <RotateCcw />
-            </button>
-            <button className="btn" style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#EF4444' }} onClick={handleEnd}>
-              <PhoneOff size={32} />
-            </button>
-            <button className="btn btn-secondary" style={{ width: '64px', height: '64px', borderRadius: '50%' }}>
-              <RotateCcw style={{ transform: 'scaleX(-1)' }} />
-            </button>
-          </div>
         </div>
 
         {/* Intelligence Side Panel */}
@@ -158,7 +178,7 @@ const SimulationPage = () => {
                     <span style={{ fontWeight: 'bold' }}>{Math.round(value * 100)}%</span>
                   </div>
                   <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <motion.div 
+                    <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${value * 100}%` }}
                       style={{ height: '100%', background: 'var(--primary)' }}

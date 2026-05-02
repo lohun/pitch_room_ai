@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronRight, BarChart3, TrendingUp, AlertCircle, RefreshCcw, Save } from 'lucide-react';
+import { ChevronRight, BarChart3, TrendingUp, AlertCircle, RefreshCcw, Save, Rocket } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -30,17 +30,25 @@ const ResultsPage = () => {
   if (!data) return <div className="container" style={{ paddingTop: '10rem', textAlign: 'center' }}><h2>Error loading report.</h2></div>;
 
   const scores = data.evaluation?.scores || {};
-  const avgScore = Object.values(scores).length > 0 
+  const avgScore = Object.values(scores).length > 0
     ? Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length * 100)
     : 0;
 
   return (
     <div className="results-page container" style={{ paddingTop: '3rem', paddingBottom: '5rem' }}>
+      <header className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 0' }}>
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white', fontSize: '1.25rem', fontWeight: 'bold' }}>
+            <Rocket className="text-accent" size={28} />
+            <h2 style={{ fontSize: '1.5rem', letterSpacing: '-0.5px' }}>PitchRoom AI</h2>
+          </Link>
+        </div>
+      </header>
       <header style={{ textAlign: 'center', marginBottom: '4rem' }}>
-        <div style={{ 
-          width: '200px', 
-          height: '200px', 
-          borderRadius: '50%', 
+        <div style={{
+          width: '200px',
+          height: '200px',
+          borderRadius: '50%',
           border: '15px solid var(--bg-dark)',
           boxShadow: '0 0 0 5px var(--border)',
           margin: '0 auto 2rem',
@@ -52,12 +60,12 @@ const ResultsPage = () => {
           background: 'var(--bg-dark)'
         }}>
           <svg style={{ position: 'absolute', width: '220px', height: '220px', transform: 'rotate(-90deg)' }}>
-            <circle 
-              cx="110" cy="110" r="100" 
-              fill="transparent" 
-              stroke="var(--primary)" 
-              strokeWidth="10" 
-              strokeDasharray="628" 
+            <circle
+              cx="110" cy="110" r="100"
+              fill="transparent"
+              stroke="var(--primary)"
+              strokeWidth="10"
+              strokeDasharray="628"
               strokeDashoffset={628 - (628 * avgScore / 100)}
               strokeLinecap="round"
             />
@@ -79,7 +87,7 @@ const ResultsPage = () => {
               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                 <span style={{ width: '150px', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{key.replace('_', ' ')}</span>
                 <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${value * 100}%` }}
                     style={{ height: '100%', background: 'var(--primary)' }}

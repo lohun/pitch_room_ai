@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
+import { Rocket } from 'lucide-react';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -55,10 +56,11 @@ const RegisterPage = () => {
     <div className="login-page container" style={{ maxWidth: '450px', paddingTop: '6rem', paddingBottom: '6rem', position: 'relative' }}>
       <div style={{ position: 'absolute', top: '2rem', left: '2rem' }}>
         <Link to="/" style={{ textDecoration: 'none', color: 'white', fontSize: '1.25rem', fontWeight: 'bold' }}>
-          PitchRoom AI
+          <Rocket className="text-accent" size={28} />
+          <h2 style={{ fontSize: '1.5rem', letterSpacing: '-0.5px' }}>PitchRoom AI</h2>
         </Link>
       </div>
-      
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -141,9 +143,9 @@ const RegisterPage = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
+          <button
+            type="submit"
+            className="btn btn-primary"
             style={{ width: '100%', padding: '1.25rem', marginBottom: '2rem' }}
             disabled={isLoading}
           >

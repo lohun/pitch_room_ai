@@ -87,6 +87,22 @@ async def end_session(session_id: str, current_user: User = Depends(get_current_
     # Here we would trigger final report generation via Gemini
     return {"session_id": session_id, "status": "ended", "message": "Final report generation triggered"}
 
+@router.get("/")
+async def get_all_sessions(current_user: User = Depends(get_current_user)):
+    db = get_db()
+    sessions = await db.sessions.find({"user_id": current_user.id}).to_list(1000)
+    
+    def clean_doc(doc):
+        if not doc: return None
+        doc["id"] = str(doc.pop("_id"))
+        return doc
+        
+    cleaned_sessions = [clean_doc(s) for s in sessions]
+    return {
+        "total_calls": len(cleaned_sessions),
+        "sessions": cleaned_sessions
+    }
+
 @router.get("/{session_id}")
 async def get_session(session_id: str, current_user: User = Depends(get_current_user)):
     db = get_db()

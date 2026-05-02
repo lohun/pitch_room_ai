@@ -77,7 +77,7 @@ class Orchestrator:
             return {}
         
         # Basic aggregation: combine feedback and pick the first question
-        combined_feedback = "\n\n".join([f"**{res['agent']}**: {res['feedback']}" for res in agent_outputs if 'feedback' in res])
+        combined_feedback = "\n\n".join([f"{res['feedback']}" for res in agent_outputs if 'feedback' in res])
         all_questions = []
         for res in agent_outputs:
             all_questions.extend(res.get("questions", []))

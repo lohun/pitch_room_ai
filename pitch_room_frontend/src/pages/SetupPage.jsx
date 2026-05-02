@@ -34,7 +34,7 @@ const SetupPage = () => {
       // 1. Start Session
       const startRes = await fetch(`${API_BASE}/session/start`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -69,6 +69,14 @@ const SetupPage = () => {
 
   return (
     <div className="setup-page container" style={{ maxWidth: '600px', paddingTop: '5rem' }}>
+      <header className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 0' }}>
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white', fontSize: '1.25rem', fontWeight: 'bold' }}>
+            <Rocket className="text-accent" size={28} />
+            <h2 style={{ fontSize: '1.5rem', letterSpacing: '-0.5px' }}>PitchRoom AI</h2>
+          </Link>
+        </div>
+      </header>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -9,6 +9,7 @@ import SimulationPage from './pages/SimulationPage';
 import ResultsPage from './pages/ResultsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
   const location = useLocation();
@@ -42,6 +43,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/setup" element={<SetupPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/simulation/:sessionId" element={<SimulationPage />} />
           <Route path="/results/:sessionId" element={<ResultsPage />} />
         </Routes>
