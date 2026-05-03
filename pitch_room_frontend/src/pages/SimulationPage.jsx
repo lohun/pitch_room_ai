@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Mic, MicOff, PhoneOff, RotateCcw, AlertCircle, BarChart3, Pause, Rocket } from 'lucide-react';
 import Waveform from '../components/Waveform';
 import { useAudioStream } from '../hooks/useAudioStream';
@@ -51,7 +51,7 @@ const SimulationPage = () => {
   const latestPia = [...transcripts].reverse().find(t => t.speaker === 'pia');
 
   return (
-    <div className="simulation-page container" style={{ paddingTop: '2rem', height: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'scroll' }}>
+    <div className="simulation-page container" style={{ paddingTop: '2rem', height: '100vh', display: 'flex', flexDirection: 'column', overflowX: "hidden" }}>
       <header className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 0' }}>
         <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white', fontSize: '1.25rem', fontWeight: 'bold' }}>
@@ -69,7 +69,7 @@ const SimulationPage = () => {
         </div>
       </header>
 
-      <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', overflow: 'hidden', paddingBottom: '2rem' }}>
+      <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', overflowX: 'hidden', paddingBottom: '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* AI Avatar / Visualizer Area */}
           <div className="glass" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
@@ -112,23 +112,46 @@ const SimulationPage = () => {
           </div>
 
           {/* Transcript Feed */}
-          <div className="glass" style={{ height: '200px', padding: '1.5rem', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', opacity: 0.5 }}>
-              <BarChart3 size={16} />
-              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Live Transcript</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            {/* User Transcript */}
+            <div className="glass" style={{ height: '250px', padding: '1.5rem', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', opacity: 0.5 }}>
+                <BarChart3 size={16} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Your Transcript</span>
+              </div>
+              <div style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                {transcripts.filter(t => t.speaker !== 'pia').length > 0 ? (
+                  transcripts.filter(t => t.speaker !== 'pia').map((t, i) => (
+                    <div key={i} style={{ padding: "10px 0" }}>
+                      You: {t.text}<br />
+                    </div>
+                  ))
+                ) : (
+                  <span style={{ opacity: 0.5 }}>Speak to begin your pitch...</span>
+                )}
+              </div>
             </div>
-            <div style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
-              {transcripts.length > 0 ? (
-                transcripts.map((t, i) => (
-                  <span key={i} style={{ color: t.speaker === 'pia' ? 'var(--primary)' : 'inherit' }}>
-                    {t.speaker === 'pia' ? "Pia: " : "You: "}{t.text}{" "}
-                  </span>
-                ))
-              ) : (
-                <span style={{ opacity: 0.5 }}>Speak to begin your pitch...</span>
-              )}
+
+            {/* PIA Transcript */}
+            <div className="glass" style={{ height: '250px', padding: '1.5rem', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', opacity: 0.5, color: 'var(--primary)' }}>
+                <BarChart3 size={16} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>PIA Transcript</span>
+              </div>
+              <div style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'var(--primary)' }}>
+                {transcripts.filter(t => t.speaker === 'pia').length > 0 ? (
+                  transcripts.filter(t => t.speaker === 'pia').map((t, i) => (
+                    <div key={i} style={{ padding: "10px 0" }}>
+                      Pia: {t.text}<br />
+                    </div>
+                  ))
+                ) : (
+                  <span style={{ opacity: 0.5 }}>Waiting for PIA to speak...</span>
+                )}
+              </div>
             </div>
           </div>
+
 
           {/* AI Interruption Alert */}
           <AnimatePresence>

@@ -73,6 +73,8 @@ class InvestorAgent(BaseAgent):
                 cleaned_text = cleaned_text[7:-3].strip()
             elif cleaned_text.startswith("```"):
                 cleaned_text = cleaned_text[3:-3].strip()
+
+            print(response.usage_metadata)
                 
             return json.loads(cleaned_text)
         except Exception as e:
@@ -101,6 +103,7 @@ class TechAgent(BaseAgent):
             model="gemini-3-flash-preview",
             config=types.GenerateContentConfig(system_instruction=system_prompt),
             contents=prompt)
+        print(response.usage_metadata)
         try:
             return json.loads(response.text.strip().replace("```json", "").replace("```", ""))
         except:
@@ -121,6 +124,7 @@ class MarketAgent(BaseAgent):
             model="gemini-3-flash-preview",
             config=types.GenerateContentConfig(system_instruction=system_prompt),
             contents=prompt)
+        print(response.usage_metadata)
         try:
             return json.loads(response.text.strip().replace("```json", "").replace("```", ""))
         except:
@@ -141,6 +145,7 @@ class ComplianceAgent(BaseAgent):
             model="gemini-3-flash-preview",
             config=types.GenerateContentConfig(system_instruction=system_prompt),
             contents=prompt)
+        print(response.usage_metadata)
         try:
             return json.loads(response.text.strip().replace("```json", "").replace("```", ""))
         except:
@@ -161,6 +166,7 @@ class PartnershipAgent(BaseAgent):
             model="gemini-3-flash-preview",
             config=types.GenerateContentConfig(system_instruction=system_prompt),
             contents=prompt)
+        print(response.usage_metadata)
         try:
             return json.loads(response.text.strip().replace("```json", "").replace("```", ""))
         except:

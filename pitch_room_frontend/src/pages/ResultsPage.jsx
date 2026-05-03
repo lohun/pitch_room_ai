@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronRight, BarChart3, TrendingUp, AlertCircle, RefreshCcw, Save, Rocket } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
@@ -14,7 +14,17 @@ const ResultsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`${API_BASE}/session/${sessionId}`);
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        const response = await fetch(`${API_BASE}/session/${sessionId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const result = await response.json();
         setData(result);
         setLoading(false);
