@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Rocket, Upload, Mic, ChevronRight, Check } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
@@ -121,7 +121,7 @@ const SetupPage = () => {
                 padding: '1rem',
                 border: '1px solid var(--border)',
                 borderRadius: '12px',
-                color: 'white',
+                color: 'rgba(255,255,255,0.02)',
                 outline: 'none',
                 background: 'rgba(255,255,255,0.02)',
                 appearance: 'none'
