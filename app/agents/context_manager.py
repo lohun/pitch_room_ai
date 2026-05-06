@@ -2,14 +2,17 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from app.core.database import get_db
 import os
-from google import genai
-from google.genai import types
+from openai import AsyncOpenAI
 
 class ContextManager:
     def __init__(self, session_id: str):
         self.session_id = session_id
         self.db = get_db()
-        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        self.llm_client = AsyncOpenAI(
+            api_key=os.getenv("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1"
+        )
+
 
     async def get_history(self, limit: int = 20) -> List[Dict]:
         """Fetches the most recent transcript history from MongoDB."""
@@ -47,41 +50,22 @@ class ContextManager:
         Summary:
         """
         
-        response = await self.client.aio.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt
-        )
-        
-        summary = response.text.strip()
+        try:
+            response = await self.llm_client.chat.completions.create(
+                model='llama-3.1-8b-instant',
+                messages=[{'role': 'system', 'content': prompt}],
+                temperature=0.2
+            )
+            summary = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"Error summarizing history: {e}")
+            summary = "Summary generation failed."
+            
         await self.update_summary(summary)
         return summary
 
-    def filter_context_for_agent(self, history: List[Dict], agent_name: str) -> List[Dict]:
+    def get_recent_context(self, history: List[Dict], limit: int = 15) -> List[Dict]:
         """
-        Filters history to provide only relevant context for a specific agent.
-        Uses keyword-based relevance for now.
+        Returns the most recent messages for context.
         """
-        relevance_map = {
-            "Tech": ["infra", "stack", "code", "dev", "scale", "cloud", "security", "tech", "ai", "ml"],
-            "Market": ["tam", "sam", "som", "competitor", "market", "industry", "customer", "growth"],
-            "Investor": ["roi", "finance", "funding", "round", "valuation", "exit", "revenue", "business model"],
-            "Compliance": ["legal", "gdpr", "hipaa", "regulation", "law", "privacy", "liability"],
-            "Partnership": ["gtm", "partner", "ecosystem", "sales", "channel", "distribution"]
-        }
-        
-        keywords = relevance_map.get(agent_name, [])
-        if not keywords:
-            return history[-10:] # Fallback to last 10 messages
-            
-        filtered_history = []
-        for h in history:
-            # Always include user messages and very recent history
-            if h['speaker'] == 'user' or history.index(h) > len(history) - 5:
-                filtered_history.append(h)
-            else:
-                # Check for relevance
-                text = h['text'].lower()
-                if any(kw in text for kw in keywords):
-                    filtered_history.append(h)
-                    
-        return filtered_history[-15:] # Limit to last 15 relevant messages
+        return history[-limit:]

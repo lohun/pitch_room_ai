@@ -7,6 +7,7 @@ import uuid
 import io
 from pypdf import PdfReader
 from app.agents.rag_manager import RAGManager
+from app.services.llm_service import LLMService
 
 router = APIRouter(prefix="/session", tags=["sessions"])
 
@@ -84,8 +85,29 @@ async def end_session(session_id: str, current_user: User = Depends(get_current_
     if not session:
         raise HTTPException(status_code=404, detail="Session not found or access denied")
     
-    # Here we would trigger final report generation via Gemini
-    return {"session_id": session_id, "status": "ended", "message": "Final report generation triggered"}
+    # 1. Fetch transcript history
+    transcripts = await db.transcripts.find({"session_id": session_id}).sort("timestamp", 1).to_list(1000)
+    
+    # 2. Trigger final report generation via Groq
+    llm_service = LLMService()
+    report_data = await llm_service.generate_final_report(transcripts, session.get("mode", "skeptical"))
+    
+    # 3. Save to DB and mark as completed
+    await db.sessions.update_one(
+        {"_id": session_id},
+        {"$set": {
+            "status": "completed",
+            "summary": report_data.get("summary"),
+            "detailed_report": report_data.get("detailed_report"),
+            "ended_at": datetime.utcnow()
+        }}
+    )
+    
+    return {
+        "session_id": session_id, 
+        "status": "completed", 
+        "report": report_data
+    }
 
 @router.get("/")
 async def get_all_sessions(current_user: User = Depends(get_current_user)):
