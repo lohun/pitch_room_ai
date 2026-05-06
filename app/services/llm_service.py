@@ -34,6 +34,20 @@ class LLMService:
         
         return response_data
 
+    async def generate_final_report(self, transcript_history: List[Dict], mode: str) -> Dict:
+        """
+        Generates a final summary and detailed report using the UnifiedAgent.
+        """
+        if not transcript_history:
+            return {
+                "summary": "No interaction recorded.",
+                "detailed_report": {"breakdown": "N/A", "failures": [], "improvements": []}
+            }
+            
+        session_id = transcript_history[0]["session_id"]
+        orchestrator = Orchestrator(session_id, mode)
+        return await orchestrator.agent.generate_final_report(transcript_history)
+
     async def summarize_session(self, session_id: str) -> str:
         """Triggers session summarization via ContextManager."""
         from app.agents.context_manager import ContextManager

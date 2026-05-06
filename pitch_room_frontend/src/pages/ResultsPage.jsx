@@ -41,8 +41,14 @@ const ResultsPage = () => {
 
   const scores = data.evaluation?.scores || {};
   const avgScore = Object.values(scores).length > 0
-    ? Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length * 100)
+    ? Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length * 10)
     : 0;
+
+
+
+  const session = data.session || {};
+  const summary = session.summary || "Your pitch successfully communicated the core value proposition, but needs refinement in delivery.";
+  const detailedReport = session.detailed_report || {};
 
   return (
     <div className="results-page container" style={{ paddingTop: '3rem', paddingBottom: '5rem' }}>
@@ -84,62 +90,66 @@ const ResultsPage = () => {
           <p style={{ textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '2px', color: 'var(--text-secondary)' }}>READINESS</p>
         </div>
 
-        <h2 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Aha! Moment</h2>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '1.2rem' }}>
-          Your pitch successfully communicated the core value proposition, but needs refinement in delivery.
+        <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Session Summary</h2>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto', fontSize: '1.2rem', lineHeight: '1.6' }}>
+          {summary}
         </p>
       </header>
 
-      <main style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <section className="glass" style={{ padding: '2rem', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {Object.entries(scores).map(([key, value]) => (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                <span style={{ width: '150px', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{key.replace('_', ' ')}</span>
-                <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${value * 100}%` }}
-                    style={{ height: '100%', background: 'var(--primary)' }}
-                  />
+      <main style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+          {/* Scores section */}
+          <section className="glass" style={{ padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', color: 'var(--primary)' }}>Evaluation Metrics</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {Object.entries(scores).map(([key, value]) => (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                    <span style={{ fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{key.replace('_', ' ')}</span>
+                    <span style={{ fontWeight: 'bold' }}>{Math.round(value * 10)}%</span>
+                  </div>
+                  <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${value * 10}%` }}
+                      style={{ height: '100%', background: 'var(--primary)' }}
+                    />
+                  </div>
                 </div>
-                <span style={{ width: '40px', textAlign: 'right', fontWeight: 'bold' }}>{Math.round(value * 100)}%</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="glass" style={{ padding: '2rem', marginBottom: '2rem', background: 'rgba(242, 153, 74, 0.05)', border: '1px solid var(--primary)' }}>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AlertCircle color="black" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '1px' }}>Critical Insight</h3>
-              <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                Your unit economics look optimistic, but your TAM calculation needs more data. The persona specifically flagged the CAC/LTV ratio as "aggressive."
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="glass" style={{ padding: '2rem', marginBottom: '4rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <TrendingUp className="text-accent" />
-              <div>
-                <p style={{ textTransform: 'uppercase', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>vs previous session</p>
-                <h4 style={{ fontSize: '1.2rem' }}>+12% Improvement</h4>
-              </div>
-            </div>
-            {/* Mock Chart Area */}
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', height: '40px' }}>
-              {[20, 35, 25, 45, 60, 40, 70, 85].map((h, i) => (
-                <div key={i} style={{ width: '6px', height: `${h}%`, background: 'var(--primary)', borderRadius: '2px', opacity: 0.3 + (i * 0.1) }}></div>
               ))}
             </div>
-          </div>
-        </section>
+          </section>
+
+          {/* Breakdown section */}
+          <section className="glass" style={{ padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--primary)' }}>Detailed Breakdown</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: '1.7' }}>
+              {detailedReport.breakdown || "Comprehensive analysis of your pitch performance across all categories."}
+            </p>
+          </section>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+          {/* Failures Section */}
+          <section className="glass" style={{ padding: '2rem', border: '1px solid #EF4444' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: '#EF4444', textTransform: 'uppercase', letterSpacing: '1px' }}>Failure Points</h3>
+            <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {detailedReport.failures?.map((f, i) => (
+                <li key={i}>{f}</li>
+              )) || <li>No major failures identified.</li>}
+            </ul>
+          </section>
+
+          {/* Improvements Section */}
+          <section className="glass" style={{ padding: '2rem', border: '1px solid #10B981' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: '#10B981', textTransform: 'uppercase', letterSpacing: '1px' }}>How to Improve</h3>
+            <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {detailedReport.improvements?.map((imp, i) => (
+                <li key={i}>{imp}</li>
+              )) || <li>Continue practicing your delivery and market data.</li>}
+            </ul>
+          </section>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <button className="btn btn-primary" style={{ padding: '1.5rem' }}>

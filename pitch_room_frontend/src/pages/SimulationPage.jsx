@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Mic, MicOff, PhoneOff, RotateCcw, AlertCircle, BarChart3, Pause, Rocket } from 'lucide-react';
 import Waveform from '../components/Waveform';
-import { useAudioStream } from '../hooks/useAudioStream';
+import { useRtcAudioStream } from '../hooks/useRtcAudioStream';
 
 const SimulationPage = () => {
   const { sessionId } = useParams();
@@ -16,8 +16,9 @@ const SimulationPage = () => {
     status,
     startStream,
     endStream
-  } = useAudioStream(sessionId);
+  } = useRtcAudioStream(sessionId);
 
+  const [isEnding, setIsEnding] = useState(false);
   const [timer, setTimer] = useState(300); // 5 minutes
 
   useEffect(() => {
@@ -37,9 +38,33 @@ const SimulationPage = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleEnd = () => {
-    endStream();
-    navigate(`/results/${sessionId}`);
+  const handleEnd = async () => {
+    setIsEnding(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      // 1. Call backend to end session and generate report
+      const response = await fetch(`http://localhost:8000/session/${sessionId}/end`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to end session');
+
+      // 2. End local streams
+      endStream();
+
+      // 3. Navigate to results
+      navigate(`/results/${sessionId}`);
+    } catch (err) {
+      console.error('Error ending session:', err);
+      // Even if API fails, end local stream and navigate
+      endStream();
+      navigate(`/results/${sessionId}`);
+    } finally {
+      setIsEnding(false);
+    }
   };
 
   const handlePause = () => {
@@ -52,6 +77,35 @@ const SimulationPage = () => {
 
   return (
     <div className="simulation-page container" style={{ paddingTop: '2rem', height: '100vh', display: 'flex', flexDirection: 'column', overflowX: "hidden" }}>
+      {isEnding && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.8)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="loader" style={{
+            width: '64px',
+            height: '64px',
+            border: '4px solid var(--primary)',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '1.5rem'
+          }}></div>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Analyzing Your Pitch</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>PIA is synthesizing your final report...</p>
+        </div>
+      )}
+
       <header className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 0' }}>
         <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white', fontSize: '1.25rem', fontWeight: 'bold' }}>
@@ -112,8 +166,7 @@ const SimulationPage = () => {
           </div>
 
           {/* Transcript Feed */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            {/* User Transcript */}
+          {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div className="glass" style={{ height: '250px', padding: '1.5rem', overflowY: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', opacity: 0.5 }}>
                 <BarChart3 size={16} />
@@ -132,7 +185,6 @@ const SimulationPage = () => {
               </div>
             </div>
 
-            {/* PIA Transcript */}
             <div className="glass" style={{ height: '250px', padding: '1.5rem', overflowY: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', opacity: 0.5, color: 'var(--primary)' }}>
                 <BarChart3 size={16} />
@@ -150,7 +202,7 @@ const SimulationPage = () => {
                 )}
               </div>
             </div>
-          </div>
+          </div> */}
 
 
           {/* AI Interruption Alert */}
@@ -186,7 +238,7 @@ const SimulationPage = () => {
         </div>
 
         {/* Intelligence Side Panel */}
-        <aside className="glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {/* <aside className="glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <BarChart3 className="text-accent" />
             <h3 style={{ fontSize: '1.2rem' }}>Live Intelligence</h3>
@@ -215,7 +267,7 @@ const SimulationPage = () => {
               </p>
             )}
           </div>
-        </aside>
+        </aside> */}
       </main>
 
       <style>{`
@@ -223,6 +275,10 @@ const SimulationPage = () => {
           0% { opacity: 1; }
           50% { opacity: 0.3; }
           100% { opacity: 1; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

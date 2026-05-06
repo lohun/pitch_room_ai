@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import sessions, websocket, auth
+from app.api import sessions, websocket, auth, rtc
+from app.api.rtc import stream
 from app.core.database import connect_to_mongo, close_mongo_connection
 import uvicorn
 
@@ -19,6 +20,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(sessions.router)
 app.include_router(websocket.router)
+app.include_router(rtc.router, prefix="/rtc")
+# stream.mount(app)
 
 @app.on_event("startup")
 async def startup_db_client():
