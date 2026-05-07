@@ -1,36 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Mic, MicOff, PhoneOff, RotateCcw, AlertCircle, BarChart3, Pause, Rocket } from 'lucide-react';
 import Waveform from '../components/Waveform';
-import { useRtcAudioStream } from '../hooks/useRtcAudioStream';
+import { useAudioRecorder } from '../hooks/useAudioRecorder';
 
 const SimulationPage = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const {
     isRecording,
-    isPiaSpeaking,
+    isProcessing,
     transcripts,
     evaluation,
     status,
-    startStream,
-    endStream
-  } = useRtcAudioStream(sessionId);
+    toggleRecording,
+    sendAudioToBackend,
+    playAudio,
+    cleanup
+  } = useAudioRecorder(sessionId);
 
   const [isEnding, setIsEnding] = useState(false);
-  const [timer, setTimer] = useState(300); // 5 minutes
+  const [timer, setTimer] = useState(300);
+  const [isPiaSpeaking, setIsPiaSpeaking] = useState(false);
 
   useEffect(() => {
-    startStream();
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => {
-      endStream();
+      cleanup();
       clearInterval(interval);
     };
-  }, [startStream, endStream]);
+  }, [cleanup]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -38,11 +40,27 @@ const SimulationPage = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleToggleRecording = useCallback(async () => {
+    if (status === 'processing') return;
+
+    const audioBlob = await toggleRecording();
+
+    if (audioBlob) {
+      const response = await sendAudioToBackend(audioBlob);
+
+      if (response && response.audio_url) {
+        setIsPiaSpeaking(true);
+        const audio = new Audio(`http://localhost:8000${response.audio_url}`);
+        audio.onended = () => setIsPiaSpeaking(false);
+        audio.play();
+      }
+    }
+  }, [toggleRecording, sendAudioToBackend, status]);
+
   const handleEnd = async () => {
     setIsEnding(true);
     try {
       const token = localStorage.getItem('access_token');
-      // 1. Call backend to end session and generate report
       const response = await fetch(`http://localhost:8000/session/${sessionId}/end`, {
         method: 'POST',
         headers: {
@@ -52,15 +70,11 @@ const SimulationPage = () => {
 
       if (!response.ok) throw new Error('Failed to end session');
 
-      // 2. End local streams
-      endStream();
-
-      // 3. Navigate to results
+      cleanup();
       navigate(`/results/${sessionId}`);
     } catch (err) {
       console.error('Error ending session:', err);
-      // Even if API fails, end local stream and navigate
-      endStream();
+      cleanup();
       navigate(`/results/${sessionId}`);
     } finally {
       setIsEnding(false);
@@ -68,11 +82,10 @@ const SimulationPage = () => {
   };
 
   const handlePause = () => {
-    endStream();
+    cleanup();
     navigate('/setup');
   };
 
-  // Get the latest PIA question/comment
   const latestPia = [...transcripts].reverse().find(t => t.speaker === 'pia');
 
   return (
@@ -125,7 +138,6 @@ const SimulationPage = () => {
 
       <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', overflowX: 'hidden', paddingBottom: '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* AI Avatar / Visualizer Area */}
           <div className="glass" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             <div style={{
               width: '80%',
@@ -147,7 +159,32 @@ const SimulationPage = () => {
               >
                 <Pause size={32} />
               </button>
-              <Mic size={48} color="white" />
+
+              <button
+                className="btn"
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  background: isRecording ? '#EF4444' : '#22C55E',
+                  color: 'white',
+                  border: 'none',
+                  cursor: status === 'processing' ? 'not-allowed' : 'pointer',
+                  opacity: status === 'processing' ? 0.6 : 1
+                }}
+                onClick={handleToggleRecording}
+                disabled={status === 'processing'}
+                title={isRecording ? "Stop Recording" : "Start Recording"}
+              >
+                {status === 'processing' ? (
+                  <div className="spinner" style={{ width: '32px', height: '32px', border: '3px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                ) : isRecording ? (
+                  <MicOff size={32} />
+                ) : (
+                  <Mic size={32} />
+                )}
+              </button>
+
               <button
                 className="btn"
                 style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#EF4444', color: 'white', border: 'none' }}
@@ -161,51 +198,9 @@ const SimulationPage = () => {
             <Waveform isActive={isRecording || isPiaSpeaking} />
           </div>
 
-          {/* Controls */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem' }}>
           </div>
 
-          {/* Transcript Feed */}
-          {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            <div className="glass" style={{ height: '250px', padding: '1.5rem', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', opacity: 0.5 }}>
-                <BarChart3 size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Your Transcript</span>
-              </div>
-              <div style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
-                {transcripts.filter(t => t.speaker !== 'pia').length > 0 ? (
-                  transcripts.filter(t => t.speaker !== 'pia').map((t, i) => (
-                    <div key={i} style={{ padding: "10px 0" }}>
-                      You: {t.text}<br />
-                    </div>
-                  ))
-                ) : (
-                  <span style={{ opacity: 0.5 }}>Speak to begin your pitch...</span>
-                )}
-              </div>
-            </div>
-
-            <div className="glass" style={{ height: '250px', padding: '1.5rem', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', opacity: 0.5, color: 'var(--primary)' }}>
-                <BarChart3 size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>PIA Transcript</span>
-              </div>
-              <div style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'var(--primary)' }}>
-                {transcripts.filter(t => t.speaker === 'pia').length > 0 ? (
-                  transcripts.filter(t => t.speaker === 'pia').map((t, i) => (
-                    <div key={i} style={{ padding: "10px 0" }}>
-                      Pia: {t.text}<br />
-                    </div>
-                  ))
-                ) : (
-                  <span style={{ opacity: 0.5 }}>Waiting for PIA to speak...</span>
-                )}
-              </div>
-            </div>
-          </div> */}
-
-
-          {/* AI Interruption Alert */}
           <AnimatePresence>
             {isPiaSpeaking && latestPia && (
               <motion.div
@@ -237,8 +232,7 @@ const SimulationPage = () => {
           </AnimatePresence>
         </div>
 
-        {/* Intelligence Side Panel */}
-        {/* <aside className="glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <aside className="glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <BarChart3 className="text-accent" />
             <h3 style={{ fontSize: '1.2rem' }}>Live Intelligence</h3>
@@ -246,7 +240,7 @@ const SimulationPage = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {evaluation ? (
-              Object.entries(evaluation.scores || evaluation).map(([key, value]) => (
+              Object.entries(evaluation).map(([key, value]) => (
                 <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                     <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{key.replace('_', ' ')}</span>
@@ -263,11 +257,11 @@ const SimulationPage = () => {
               ))
             ) : (
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center', marginTop: '2rem' }}>
-                Waiting for interaction to generate analysis...
+                Press the mic button and speak to begin your pitch...
               </p>
             )}
           </div>
-        </aside> */}
+        </aside>
       </main>
 
       <style>{`

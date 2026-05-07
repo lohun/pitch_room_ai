@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import sessions, websocket, auth, rtc
+from app.api import sessions, websocket, auth, rtc, conversation
 from app.api.rtc import stream
 from app.core.database import connect_to_mongo, close_mongo_connection
+from fastapi.staticfiles import StaticFiles
 import uvicorn
+import os
 
 app = FastAPI(title="PIA — Pitch Intelligence Agent API")
 
@@ -19,9 +21,15 @@ app.add_middleware(
 # Include Routers
 app.include_router(auth.router)
 app.include_router(sessions.router)
+app.include_router(conversation.router)
 app.include_router(websocket.router)
 app.include_router(rtc.router, prefix="/rtc")
 # stream.mount(app)
+
+# Serve generated audio files
+storage_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storage", "generated")
+os.makedirs(storage_path, exist_ok=True)
+app.mount("/storage/generated", StaticFiles(directory=storage_path), name="generated")
 
 @app.on_event("startup")
 async def startup_db_client():

@@ -18,6 +18,7 @@ async def start_session(session_data: SessionCreate, current_user: User = Depend
     session_dict = session_data.dict()
     session_dict["_id"] = session_id
     session_dict["user_id"] = current_user.id  # Ensure session belongs to current user
+    session_dict["state"] = "IDLE"
     
     await db.sessions.insert_one(session_dict)
     

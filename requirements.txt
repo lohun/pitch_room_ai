@@ -25,3 +25,5 @@ fastrtc
 fastrtc[vad,stt,tts]
 ollama
 openai
+transformers
+kokoro

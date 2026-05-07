@@ -101,21 +101,21 @@ async def handle_pitch_audio(audio: tuple[int, np.ndarray]):
 stream = Stream(
     handler=ReplyOnPause(
         handle_pitch_audio, 
+        can_interrupt=True,
         algo_options=AlgoOptions(
-            audio_chunk_duration=0.6,
+            audio_chunk_duration=1.5,
             started_talking_threshold=0.2,
-            speech_threshold=0.1
+            speech_threshold=0.6
         ), 
         model_options=SileroVadOptions(
             threshold=0.5,
             min_speech_duration_ms=250,
-            min_silence_duration_ms=100
+            min_silence_duration_ms=2000
         )
     ),
     modality="audio",
     mode="send-receive",
-    concurrency_limit=10,
-    additional_inputs=[gr.Textbox(label="Webrtc Id")]
+    concurrency_limit=10
 )
 
 @router.post("/{session_id}/offer")
@@ -131,7 +131,12 @@ async def rtc_offer(session_id: str, request: Request):
         webrtc_to_session[webrtc_id] = session_id
         sessions_ids.append(webrtc_id)
         print(f"Mapped webrtc_id {webrtc_id} to session {session_id}")
+
+        
     
+    if await  request.is_disconnected():
+        stream.clean_up()
+        return
     resp = await stream.handle_offer(body, set_outputs=stream.set_additional_outputs(body['webrtc_id']) )
     return resp
 
